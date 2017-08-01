@@ -1,0 +1,288 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceLocation": {
+      "type": "string"
+    },
+    "clusterName": {
+      "type": "string"
+    },
+    "clusterEndpoint": {
+      "type": "string"
+    },
+    "clusterDurabilityLevel": {
+      "type": "string"
+    },
+    "clusterCertificateThumbprint": {
+      "type": "string"
+    },
+    "vmNodeTypeName": {
+      "type": "string"
+    },
+    "vmNodeTypeSize": {
+      "type": "string"
+    },
+    "supportLogStorageAccountName": {
+      "type": "string"
+    },
+    "applicationDiagnosticsStorageAccountName": {
+      "type": "string"
+    },
+    "vmStorageAccountName": {
+      "type": "string"
+    },
+    "wadcfgstart": {
+      "type": "string"
+    },
+    "wadeventlog": {
+      "type": "string"
+    },
+    "wadlogs": {
+      "type": "string"
+    },
+    "wadperfcounterstart": {
+      "type": "string"
+    },
+    "wadperfcountersmemory": {
+      "type": "string"
+    },
+    "wadperfcounterwebapi": {
+      "type": "string"
+    },
+    "wadverifypackdbcounter": {
+      "type": "string"
+    },
+    "wadsupplypackdocdbcounter": {
+      "type": "string"
+    },
+    "wadreactivatepackdocdbcounter": {
+      "type": "string"
+    },
+    "waddecommissionpackdbcounter": {
+      "type": "string"
+    },
+    "wadperfcounteridentityserver": {
+      "type": "string"
+    },
+    "wadperfcounterend": {
+      "type": "string"
+    },
+    "wadcfgmetrics": {
+      "type": "string"
+    },
+    "wadetwprovider": {
+      "type": "string"
+    },
+    "wadappinsightssink": {
+      "type": "string"
+    },
+    "wadcfgend": {
+      "type": "string"
+    },
+    "appInsightsName": {
+      "type": "string"
+    },
+    "artifactsLocation": {
+      "type": "string"
+    },
+    "artifactsLocationSasToken": {
+      "type": "string"
+    },
+    "installationsScriptFolder": {
+      "type": "string"
+    },
+    "installationsScriptFileName": {
+      "type": "string"
+    },
+    "identityServerCertName": {
+      "type": "string"
+    },
+    "identityServerCertPassword": {
+      "type": "string"
+    },
+    "releaseId": {
+      "type": "string"
+    },
+    "nicName": {
+      "type": "string"
+    },
+    "lbPoolID0": {
+      "type": "string"
+    },
+    "lbNatPoolID0": {
+      "type": "string"
+    },
+    "subnet0Ref": {
+      "type": "string"
+    },
+    "adminUserName": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "sourceVaultValue": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "overProvision": "false",
+    "vmStorageAccountContainerName": "vhds",
+    "certificateStoreValue": "My",
+    "vmImagePublisher": "MicrosoftWindowsServer",
+    "vmImageOffer": "WindowsServer",
+    "vmImageSku": "2012-R2-Datacenter",
+    "vmImageVersion": "latest"
+  },
+  "resources": [
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Compute/virtualMachineScaleSets",
+      "name": "[parameters('vmNodeTypeName')]",
+      "location": "[parameters('resourceLocation')]",
+      "properties": {
+        "overprovision": "[variables('overProvision')]",
+        "upgradePolicy": {
+          "mode": "Automatic"
+        },
+        "virtualMachineProfile": {
+          "extensionProfile": {
+            "extensions": [
+              {
+                "name": "[concat(parameters('vmNodeTypeName'),'_ServiceFabricNode')]",
+                "properties": {
+                  "type": "ServiceFabricNode",
+                  "autoUpgradeMinorVersion": false,
+                  "protectedSettings": {
+                    "StorageAccountKey1": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('supportLogStorageAccountName')),'2015-06-15').key1]",
+                    "StorageAccountKey2": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('supportLogStorageAccountName')),'2015-06-15').key2]"
+                  },
+                  "publisher": "Microsoft.Azure.ServiceFabric",
+                  "settings": {
+                    "clusterEndpoint": "[(parameters('clusterEndpoint')]",
+                    "nodeTypeRef": "[parameters('vmNodeTypeName')]",
+                    "dataPath": "D:\\\\SvcFab",
+                    "durabilityLevel": "[parameters('clusterDurabilityLevel')]",
+                    "certificate": {
+                      "thumbprint": "[parameters('clusterCertificateThumbprint')]",
+                      "x509StoreName": "[variables('certificateStoreValue')]"
+                    }
+                  },
+                  "typeHandlerVersion": "1.0"
+                }
+              },
+              {
+                "name": "[concat('VMDiagnosticsVmExt',variables('vmNodeTypeName'))]",
+                "properties": {
+                  "type": "IaaSDiagnostics",
+                  "autoUpgradeMinorVersion": true,
+                  "protectedSettings": {
+                    "storageAccountName": "[parameters('applicationDiagnosticsStorageAccountName')]",
+                    "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('applicationDiagnosticsStorageAccountName')),'2015-06-15').key1]",
+                    "storageAccountEndPoint": "https://core.windows.net/"
+                  },
+                  "publisher": "Microsoft.Azure.Diagnostics",
+                  "settings": {
+                    "xmlCfg": "[base64(concat(parameters('wadcfgstart'), parameters('wadeventlog'), parameters('wadlogs'), parameters('wadperfcounterstart'), parameters('wadperfcountersmemory'), parameters('wadperfcounterwebapi'), parameters('wadverifypackdbcounter'), parameters('wadsupplypackdocdbcounter'), parameters('wadreactivatepackdocdbcounter'), parameters('waddecommissionpackdbcounter'), parameters('wadperfcounteridentityserver'), parameters('wadperfcounterend'), parameters('wadcfgmetrics'), parameters('wadetwprovider'), parameters('wadappinsightssink'), '<ApplicationInsights>', reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2014-04-01').InstrumentationKey, '</ApplicationInsights>', parameters('wadcfgend')))]",
+                    "StorageAccount": "[parameters('applicationDiagnosticsStorageAccountName')]"
+                  },
+                  "typeHandlerVersion": "1.5"
+                }
+              },
+              {
+                "name": "runCustomScripts",
+                "properties": {
+                  "publisher": "Microsoft.Compute",
+                  "type": "CustomScriptExtension",
+                  "typeHandlerVersion": "1.4",
+                  "autoUpgradeMinorVersion": true,
+                  "settings": {
+                    "fileUris": [
+                      "[concat(parameters('artifactsLocation'), '/', parameters('installationsScriptFolder'), '/', parameters('installationsScriptFileName'), parameters('artifactsLocationSasToken'))]"
+                    ],
+                    "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', parameters('installationsScriptFolder'), '/', parameters('installationsScriptFileName'), ' -artifactsBaseUri ', parameters('artifactsLocation'), ' -sasToken \"', parameters('artifactsLocationSasToken'), '\"' ,' -IdentityServerCertName ', parameters('identityServerCertName'), ' -IdentityServerCertPassword ', parameters('identityServerCertPassword'), ' -releaseId ', parameters('releaseId'))]"
+                  }
+                }
+              }
+            ]
+          },
+          "networkProfile": {
+            "networkInterfaceConfigurations": [
+              {
+                "name": "[concat(parameters('nicName'), '-0')]",
+                "properties": {
+                  "ipConfigurations": [
+                    {
+                      "name": "[concat(parameters('nicName'),'-',0)]",
+                      "properties": {
+                        "loadBalancerBackendAddressPools": [
+                          {
+                            "id": "[parameters('lbPoolID0')]"
+                          }
+                        ],
+                        "loadBalancerInboundNatPools": [
+                          {
+                            "id": "[parameters('lbNatPoolID0')]"
+                          }
+                        ],
+                        "subnet": {
+                          "id": "[parameters('subnet0Ref')]"
+                        }
+                      }
+                    }
+                  ],
+                  "primary": true
+                }
+              }
+            ]
+          },
+          "osProfile": {
+            "adminPassword": "[parameters('adminPassword')]",
+            "adminUsername": "[parameters('adminUserName')]",
+            "computernamePrefix": "[parameters('vmNodeTypeName')]",
+            "secrets": [
+              {
+                "sourceVault": {
+                  "id": "[parameters('sourceVaultValue')]"
+                },
+                "vaultCertificates": [
+                  {
+                    "certificateStore": "[variables('certificateStoreValue')]",
+                    "certificateUrl": "[parameters('certificateUrlValue')]"
+                  }
+                ]
+              }
+            ]
+          },
+          "storageProfile": {
+            "imageReference": {
+              "publisher": "[variables('vmImagePublisher')]",
+              "offer": "[variables('vmImageOffer')]",
+              "sku": "[variables('vmImageSku')]",
+              "version": "[variables('vmImageVersion')]"
+            },
+            "osDisk": {
+              "vhdContainers": [
+                "[concat('http://',parameters('vmStorageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'))]"
+              ],
+              "name": "vmssosdisk",
+              "caching": "ReadOnly",
+              "createOption": "FromImage"
+            }
+          }
+        }
+      },
+      "sku": {
+        "name": "[parameters('vmNodeTypeSize')]",
+        "capacity": "5",
+        "tier": "Standard"
+      },
+      "tags": {
+        "resourceType": "Service Fabric",
+        "clusterName": "[parameters('clusterName')]"
+      }
+    }
+  ],
+  "outputs":{}
+}
