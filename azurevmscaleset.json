@@ -124,6 +124,9 @@
     },
     "sourceVaultValue": {
       "type": "string"
+    },
+    "certificateUrlValue": {
+      "type": "string"
     }
   },
   "variables": {
@@ -173,7 +176,7 @@
                 }
               },
               {
-                "name": "[concat('VMDiagnosticsVmExt',variables('vmNodeTypeName'))]",
+                "name": "[concat('VMDiagnosticsVmExt',parameters('vmNodeTypeName'))]",
                 "properties": {
                   "type": "IaaSDiagnostics",
                   "autoUpgradeMinorVersion": true,
